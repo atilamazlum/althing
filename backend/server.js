@@ -12,6 +12,22 @@ import { callGemini } from './gemini.js';
 const PORT = process.env.PORT || 3001;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 
+// Birden fazla origin destekle, sondaki slash'a takılmayan esnek CORS
+const ALLOWED_ORIGINS = FRONTEND_URL
+  .split(',')
+  .map((s) => s.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+ALLOWED_ORIGINS.push('http://localhost:5173'); // local dev için her zaman izinli
+
+function corsOriginCheck(origin, callback) {
+  // Server-to-server veya curl gibi origin'siz istekler — izin ver
+  if (!origin) return callback(null, true);
+  const normalized = origin.replace(/\/$/, '');
+  if (ALLOWED_ORIGINS.includes(normalized)) return callback(null, true);
+  console.warn(`[CORS reddedildi] origin=${origin} | izinli=${ALLOWED_ORIGINS.join(', ')}`);
+  callback(new Error(`CORS: ${origin} izinli değil`));
+}
+
 const TURN_LIMIT_MS = 10 * 60 * 1000; // 10 dakika
 const BASE_COURT_TURNS = 5;
 const EXTENSION_TURNS = 2;
@@ -20,7 +36,7 @@ const MIN_COMPLAINT_CHARS = 40;
 const DISCONNECT_GRACE_MS = 5 * 60 * 1000; // 5 dk reconnect penceresi
 
 const app = express();
-app.use(cors({ origin: FRONTEND_URL }));
+app.use(cors({ origin: corsOriginCheck }));
 app.use(express.json({ limit: '20mb' }));
 
 // Basit health endpoint
@@ -28,7 +44,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: FRONTEND_URL },
+  cors: { origin: corsOriginCheck },
   maxHttpBufferSize: 20e6, // 20MB — base64 görseller için
 });
 
