@@ -1,0 +1,200 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html, body, #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background-color: #f1e8d4;
+    /* Subtle paper grain: tiny noise overlay via SVG data URI */
+    background-image:
+      radial-gradient(rgba(58, 50, 42, 0.04) 1px, transparent 1px),
+      radial-gradient(rgba(58, 50, 42, 0.03) 1px, transparent 1px);
+    background-size: 3px 3px, 7px 7px;
+    background-position: 0 0, 1px 2px;
+    color: #1a1612;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  *::selection {
+    background: #7a1f1f;
+    color: #f1e8d4;
+  }
+}
+
+@layer components {
+  /* Mahkeme evrakı paper kart */
+  .paper {
+    background: #f7f0dd;
+    border: 1px solid #1a1612;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.06), 0 12px 28px rgba(58,50,42,0.10);
+    position: relative;
+  }
+  /* Köşe damga görseli için pseudo */
+  .paper::before {
+    content: '';
+    position: absolute;
+    top: -1px; right: -1px; width: 12px; height: 12px;
+    background: #1a1612;
+    transform: rotate(45deg) translate(50%, -50%);
+  }
+
+  /* Brutalist button */
+  .btn-brutal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.7rem 1.4rem;
+    background: #1a1612;
+    color: #f1e8d4;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid #1a1612;
+    cursor: pointer;
+    transition: transform 80ms ease-out, background 80ms ease-out;
+  }
+  .btn-brutal:hover:not(:disabled) {
+    background: #7a1f1f;
+    border-color: #7a1f1f;
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0 #1a1612;
+  }
+  .btn-brutal:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-brutal-secondary {
+    background: transparent;
+    color: #1a1612;
+  }
+  .btn-brutal-secondary:hover:not(:disabled) {
+    background: #1a1612;
+    color: #f1e8d4;
+  }
+
+  /* Resmi mahkeme başlığı */
+  .court-header {
+    text-align: center;
+    border-top: 3px double #1a1612;
+    border-bottom: 3px double #1a1612;
+    padding: 0.5rem 0;
+    font-family: 'DM Serif Display', serif;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+  }
+
+  /* Esas no, küçük caps */
+  .esas-no {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #6a5f54;
+  }
+
+  /* Textarea (mahkeme evrakı tarzı) */
+  .court-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: #1a1612;
+    background-image: linear-gradient(transparent 0, transparent calc(1.7em - 1px), rgba(58,50,42,0.18) calc(1.7em - 1px), rgba(58,50,42,0.18) 1.7em);
+    background-size: 100% 1.7em;
+    padding: 0;
+  }
+  .court-textarea::placeholder {
+    color: #6a5f54;
+    font-style: italic;
+  }
+
+  /* Sıra göstergesi (yarsa kim konuşuyor) */
+  .turn-indicator {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: #1a1612;
+    color: #f1e8d4;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .turn-indicator-active {
+    background: #7a1f1f;
+  }
+
+  /* Damga (kararda) */
+  .stamp {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border: 3px solid #7a1f1f;
+    color: #7a1f1f;
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    transform: rotate(-3deg);
+    opacity: 0.85;
+  }
+
+  /* Hata kutusu */
+  .error-box {
+    background: #fff5f0;
+    border: 1px solid #7a1f1f;
+    color: #5c1717;
+    padding: 0.8rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+}
+
+/* Yükleniyor animasyonu */
+@keyframes ink-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.ink-pulse {
+  animation: ink-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.slide-up {
+  animation: slide-up 280ms ease-out both;
+}
+
+/* Letter modal animasyonu */
+@keyframes modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modal-scale {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.letter-modal-backdrop { animation: modal-fade 180ms ease-out both; }
+.letter-modal-paper { animation: modal-scale 260ms cubic-bezier(0.2, 0.7, 0.3, 1) both; }
