@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { pickRandomQuote, toRoman } from '../data/justice-quotes.js';
 
-const DURATION_MS = 10000;
-const FADE_MS = 500;
+const DURATION_MS = 14000;
+const FADE_MS = 700;
 
 export default function SessionTransition({ turnNumber, onDone }) {
   const [quote] = useState(() => pickRandomQuote());
@@ -12,7 +12,7 @@ export default function SessionTransition({ turnNumber, onDone }) {
   onDoneRef.current = onDone;
 
   useEffect(() => {
-    const tIn = setTimeout(() => setPhase('hold'), 600);
+    const tIn = setTimeout(() => setPhase("hold"), 900);
     const tOut = setTimeout(() => setPhase('out'), DURATION_MS - FADE_MS);
     const tEnd = setTimeout(() => {
       if (onDoneRef.current) onDoneRef.current();
@@ -27,12 +27,12 @@ export default function SessionTransition({ turnNumber, onDone }) {
 
   return (
     <div
-      className={`fixed inset-0 z-[60] flex flex-col items-center justify-center bg-ink text-parchment transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[60] flex flex-col items-center justify-center bg-ink text-parchment transition-opacity duration-700 ${
         phase === 'out' ? 'opacity-0' : 'opacity-100'
       }`}
     >
       <div
-        className={`transition-all duration-700 text-center px-8 ${
+        className={`transition-all duration-1000 text-center px-8 ${
           phase === 'in' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
         }`}
       >

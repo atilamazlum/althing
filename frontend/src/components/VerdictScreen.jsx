@@ -122,21 +122,46 @@ export default function VerdictScreen({ room, role, onNewCase }) {
           </div>
         </div>
 
-        {/* === DANIŞMAN === */}
-        {c && (
+        {/* === DANIŞMAN VARGA (sert) === */}
+        {c?.varga && (
           <div className="paper p-8 md:p-12">
-            <div className="court-header mb-6">Danışman Görüşü</div>
-            <p className="text-xl italic mb-8 leading-relaxed text-ink-soft">{c.intro}</p>
+            <div className="court-header mb-2">Danışman Varga</div>
+            <p className="font-mono text-[11px] tracking-widest uppercase text-oxblood mb-6">
+              Yüzleştirme
+            </p>
+            <p className="text-xl italic mb-8 leading-relaxed text-ink-soft">{c.varga.intro}</p>
             <div className="space-y-6">
-              <CounselMessage label={davaciName} text={c.davaci_message} />
-              <CounselMessage label={sanikName} text={c.sanik_message} />
+              <CounselMessage label={davaciName} text={c.varga.davaci_message} />
+              <CounselMessage label={sanikName} text={c.varga.sanik_message} />
+              <div>
+                <div className="font-mono text-xs tracking-widest text-oxblood uppercase mb-2">
+                  İki Tarafa
+                </div>
+                <p className="leading-relaxed">{c.varga.joint_advice}</p>
+              </div>
+              <p className="italic text-lg pt-6 border-t border-ink-faded/30">{c.varga.closing}</p>
+            </div>
+          </div>
+        )}
+
+        {/* === DANIŞMAN ADLER (ılımlı) === */}
+        {c?.adler && (
+          <div className="paper p-8 md:p-12">
+            <div className="court-header mb-2">Danışman Adler</div>
+            <p className="font-mono text-[11px] tracking-widest uppercase text-oxblood mb-6">
+              Yol Gösterme
+            </p>
+            <p className="text-xl italic mb-8 leading-relaxed text-ink-soft">{c.adler.intro}</p>
+            <div className="space-y-6">
+              <CounselMessage label={davaciName} text={c.adler.davaci_message} />
+              <CounselMessage label={sanikName} text={c.adler.sanik_message} />
               <div>
                 <div className="font-mono text-xs tracking-widest text-oxblood uppercase mb-2">
                   Ortak Tavsiye
                 </div>
-                <p className="leading-relaxed">{c.joint_advice}</p>
+                <p className="leading-relaxed">{c.adler.joint_advice}</p>
               </div>
-              <p className="italic text-lg pt-6 border-t border-ink-faded/30">{c.closing}</p>
+              <p className="italic text-lg pt-6 border-t border-ink-faded/30">{c.adler.closing}</p>
             </div>
           </div>
         )}
@@ -151,92 +176,102 @@ export default function VerdictScreen({ room, role, onNewCase }) {
           <div className="flex flex-col md:flex-row gap-6 items-center md:items-start justify-center">
             {/* STORY CARD */}
             <div
-  ref={cardRef}
-  style={{
-    width: 300,
-    height: 533,
-    background: 'linear-gradient(165deg, #f3eccf 0%, #e8dcb8 100%)',
-    padding: '24px 22px',
-    color: '#1a1410',
-    fontFamily: '"Crimson Pro", Georgia, serif',
-    boxShadow: '0 20px 50px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(20,20,16,0.12)',
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-    overflow: 'hidden',
-    flexShrink: 0,
-  }}
->
-  {/* Köşe markaları */}
-  <span style={{ position: 'absolute', top: 9, left: 9, width: 12, height: 12, borderLeft: '1.5px solid rgba(26,20,16,0.4)', borderTop: '1.5px solid rgba(26,20,16,0.4)' }} />
-  <span style={{ position: 'absolute', top: 9, right: 9, width: 12, height: 12, borderRight: '1.5px solid rgba(26,20,16,0.4)', borderTop: '1.5px solid rgba(26,20,16,0.4)' }} />
-  <span style={{ position: 'absolute', bottom: 9, left: 9, width: 12, height: 12, borderLeft: '1.5px solid rgba(26,20,16,0.4)', borderBottom: '1.5px solid rgba(26,20,16,0.4)' }} />
-  <span style={{ position: 'absolute', bottom: 9, right: 9, width: 12, height: 12, borderRight: '1.5px solid rgba(26,20,16,0.4)', borderBottom: '1.5px solid rgba(26,20,16,0.4)' }} />
+              ref={cardRef}
+              style={{
+                width: 300,
+                height: 533,
+                background: 'linear-gradient(165deg, #f3eccf 0%, #e8dcb8 100%)',
+                padding: '28px 26px',
+                color: '#1a1410',
+                fontFamily: '"Crimson Pro", Georgia, serif',
+                boxShadow: '0 20px 50px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(20,20,16,0.12)',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                overflow: 'hidden',
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ position: 'absolute', top: 9, left: 9, width: 12, height: 12, borderLeft: '1.5px solid rgba(26,20,16,0.4)', borderTop: '1.5px solid rgba(26,20,16,0.4)' }} />
+              <span style={{ position: 'absolute', top: 9, right: 9, width: 12, height: 12, borderRight: '1.5px solid rgba(26,20,16,0.4)', borderTop: '1.5px solid rgba(26,20,16,0.4)' }} />
+              <span style={{ position: 'absolute', bottom: 9, left: 9, width: 12, height: 12, borderLeft: '1.5px solid rgba(26,20,16,0.4)', borderBottom: '1.5px solid rgba(26,20,16,0.4)' }} />
+              <span style={{ position: 'absolute', bottom: 9, right: 9, width: 12, height: 12, borderRight: '1.5px solid rgba(26,20,16,0.4)', borderBottom: '1.5px solid rgba(26,20,16,0.4)' }} />
 
-  {/* Üst etiket */}
-  <div style={{ textAlign: 'center' }}>
-    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 9, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#7a1f1f' }}>
-      Althing Mahkemesi
-    </div>
-  </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 9, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#7a1f1f' }}>
+                  Althing Mahkemesi
+                </div>
+              </div>
 
-  {/* Esas No */}
-  <div style={{ textAlign: 'center', marginTop: 10 }}>
-    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.45em', textTransform: 'uppercase', color: '#5a4a3a' }}>
-      Esas No
-    </div>
-    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 22, letterSpacing: '0.3em', color: '#7a1f1f', marginTop: 2 }}>
-      {room.code}
-    </div>
-  </div>
+              <div style={{ textAlign: 'center', marginTop: 14 }}>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.45em', textTransform: 'uppercase', color: '#5a4a3a' }}>
+                  Esas No
+                </div>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 24, letterSpacing: '0.3em', color: '#7a1f1f', marginTop: 3 }}>
+                  {room.code}
+                </div>
+              </div>
 
-  {/* Severity */}
-  <div style={{ textAlign: 'center', margin: '12px 0 10px' }}>
-    <div style={{
-      display: 'inline-block',
-      padding: '5px 14px',
-      background: severityStyle.bg,
-      color: '#f7f0dd',
-      fontFamily: '"JetBrains Mono", monospace',
-      fontSize: 10,
-      letterSpacing: '0.4em',
-      textTransform: 'uppercase',
-      fontWeight: 600,
-    }}>
-      Şiddet · {severityStyle.label}
-    </div>
-  </div>
+              <div style={{ textAlign: 'center', margin: '18px 0 12px' }}>
+                <div style={{
+                  display: 'inline-block',
+                  padding: '6px 16px',
+                  background: severityStyle.bg,
+                  color: '#f7f0dd',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: 10,
+                  letterSpacing: '0.4em',
+                  textTransform: 'uppercase',
+                  fontWeight: 600,
+                }}>
+                  Şiddet · {severityStyle.label}
+                </div>
+              </div>
 
-  {/* Hüküm */}
-  <div style={{ textAlign: 'center', marginBottom: 8 }}>
-    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#5a4a3a' }}>
-      Hüküm
-    </div>
-    <div style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 24, lineHeight: 1.05, color: '#1a1410', marginTop: 4 }}>
-      {stampLabel}
-    </div>
-  </div>
+              <div style={{ textAlign: 'center', marginBottom: 10 }}>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#5a4a3a' }}>
+                  Hüküm
+                </div>
+                <div style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 26, lineHeight: 1.05, color: '#1a1410', marginTop: 5 }}>
+                  {stampLabel}
+                </div>
+              </div>
 
-  {/* Kazananın fotoğrafı */}
-  <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', minHeight: 0 }}>
-    {winner === 'DAVACI_HAKLI' && (
-      <img src="/sprites/davaci/normal.png" alt="" style={{ maxHeight: '100%', maxWidth: '90%', objectFit: 'contain' }} />
-    )}
-    {winner === 'SANIK_HAKLI' && (
-      <img src="/sprites/sanik/normal.png" alt="" style={{ maxHeight: '100%', maxWidth: '90%', objectFit: 'contain' }} />
-    )}
-    {winner === 'IKISI_DE_PAY_SAHIBI' && (
-      <img src="/sprites/yargic/normal.png" alt="" style={{ maxHeight: '100%', maxWidth: '90%', objectFit: 'contain' }} />
-    )}
-  </div>
+              <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0 10px' }}>
+                <span style={{ width: 50, height: 1, background: '#7a1f1f', opacity: 0.45 }} />
+              </div>
 
-  {/* Footer watermark */}
-  <div style={{ borderTop: '1px solid rgba(122, 31, 31, 0.3)', paddingTop: 6, textAlign: 'center', marginTop: 6 }}>
-    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#7a1f1f', fontWeight: 600 }}>
-      Yargıç Ayumi · {today}
-    </div>
-  </div>
-</div>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#5a4a3a', marginBottom: 5 }}>
+                  Yargıçtan
+                </div>
+                <p style={{ fontSize: 12, fontStyle: 'italic', lineHeight: 1.45, color: '#1a1410', margin: 0 }}>
+                  {truncate(v.summary, 150)}
+                </p>
+              </div>
+
+              {c?.adler?.joint_advice && (
+                <div style={{ marginBottom: 8 }}>
+                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#5a4a3a', marginBottom: 5 }}>
+                    Danışman
+                  </div>
+                  <p style={{ fontSize: 12, lineHeight: 1.45, color: '#1a1410', margin: 0 }}>
+                    {truncate(c.adler.joint_advice, 130)}
+                  </p>
+                </div>
+              )}
+
+              <div style={{ flex: 1 }} />
+
+              <div style={{ borderTop: '1px solid rgba(122, 31, 31, 0.3)', paddingTop: 8, textAlign: 'center' }}>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#7a1f1f', fontWeight: 600 }}>
+                  Yargıç Ayumi
+                </div>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 7, letterSpacing: '0.25em', color: '#7a6a4a', marginTop: 3 }}>
+                  {today}
+                </div>
+              </div>
+            </div>
 
             {/* BUTONLAR — kartın yanında dikey */}
             <div className="flex flex-col gap-3 w-full md:w-auto md:min-w-[180px]">

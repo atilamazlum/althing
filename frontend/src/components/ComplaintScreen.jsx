@@ -9,7 +9,6 @@ export default function ComplaintScreen({ room, role, myName, onSubmit }) {
   const [images, setImages] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [judgeMode, setJudgeMode] = useState('normal');
 
   if (role === 'sanik') {
     return (
@@ -34,7 +33,7 @@ export default function ComplaintScreen({ room, role, myName, onSubmit }) {
     setConfirmOpen(false);
     setSubmitting(true);
     const payload = images.map((img) => ({ mimeType: img.mimeType, data: img.data }));
-    onSubmit(text.trim(), payload, judgeMode);
+    onSubmit(text.trim(), payload);
   }
 
   return (
@@ -56,53 +55,6 @@ export default function ComplaintScreen({ room, role, myName, onSubmit }) {
               Olanları olduğu gibi anlat. Konuşma dili rahat — mahkeme kalemi metni resmi diliyle iddianameye çevirecek.
               Süre limiti yok, ama en az {MIN_CHARS} karakter.
             </p>
-
-            <div className="mb-6">
-              <div className="text-sm font-mono tracking-widest text-ink-faded uppercase mb-3">
-                Yargıç Seç
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setJudgeMode('normal')}
-                  className={`text-left p-4 border-2 transition-colors ${
-                    judgeMode === 'normal'
-                      ? 'border-oxblood bg-oxblood/5'
-                      : 'border-ink-faded/40 hover:border-ink'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-display text-xl">Yargıç Ayumi</span>
-                    <span className={`font-mono text-[10px] tracking-widest uppercase ${judgeMode === 'normal' ? 'text-oxblood' : 'text-ink-faded'}`}>
-                      {judgeMode === 'normal' ? '✓ Seçili' : 'Normal'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-ink-soft leading-relaxed">
-                    Sert ama ölçülü. Kanıta saplanır, taraf seçer. Gerektiğinde iğneli espri.
-                  </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setJudgeMode('radikal')}
-                  className={`text-left p-4 border-2 transition-colors ${
-                    judgeMode === 'radikal'
-                      ? 'border-oxblood bg-oxblood/5'
-                      : 'border-ink-faded/40 hover:border-ink'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-display text-xl">Yargıç Sigrid</span>
-                    <span className={`font-mono text-[10px] tracking-widest uppercase ${judgeMode === 'radikal' ? 'text-oxblood' : 'text-ink-faded'}`}>
-                      {judgeMode === 'radikal' ? '✓ Seçili' : 'Radikal'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-ink-soft leading-relaxed">
-                    Tavizsiz, acımasız, dolaysız. Yumuşatma yok. Severity'de cömert.
-                  </p>
-                </button>
-              </div>
-            </div>
 
             <textarea
               className="court-textarea min-h-[280px]"

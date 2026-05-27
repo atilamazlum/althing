@@ -6,7 +6,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { IDDIANAME_YAZICI, YARGIC, YARGIC_RADIKAL, DANISMAN } from './prompts.js';
+import { IDDIANAME_YAZICI, YARGIC, DANISMAN_VARGA, DANISMAN_ADLER } from './prompts.js';
 import { callGemini } from './gemini.js';
 
 const PORT = process.env.PORT || 3001;
@@ -178,16 +178,16 @@ async function proceedToVerdict(room) {
     ].join('\n\n');
 
     if (!room.verdict) {
-      const judgePrompt = room.judgeMode === 'radikal' ? YARGIC_RADIKAL : YARGIC;
-      const verdict = await callGemini(judgePrompt, caseHistory, allImages);
+      const verdict = await callGemini(YARGIC, caseHistory, allImages);
       room.verdict = verdict;
     }
     room.phase = PHASES.GENERATING_COUNSEL;
     broadcast(room);
 
     const counselInput = `${caseHistory}\n\nYARGIÇ KARARI:\n${JSON.stringify(room.verdict, null, 2)}`;
-    const counsel = await callGemini(DANISMAN, counselInput);
-    room.counsel = counsel;
+    const varga = await callGemini(DANISMAN_VARGA, counselInput);
+    const adler = await callGemini(DANISMAN_ADLER, counselInput);
+    room.counsel = { varga, adler };
     room.phase = PHASES.COMPLETE;
     broadcast(room);
   } catch (err) {
