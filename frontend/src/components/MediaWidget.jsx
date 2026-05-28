@@ -5,6 +5,7 @@ export default function MediaWidget({ deadline }) {
   const categories = useMemo(() => Object.keys(PLAYLIST), []);
   const [showGrid, setShowGrid] = useState(false);
   const [playingUrl, setPlayingUrl] = useState(null);
+  const [minimized, setMinimized] = useState(false);
   const [activeCat, setActiveCat] = useState(categories[0] || null);
 
   // Tur süresi son 10sn — sadece grid panelini kapat, iframe çalmaya devam
@@ -145,15 +146,22 @@ export default function MediaWidget({ deadline }) {
       {/* MINI PLAYER — şarkı çalıyorsa her zaman görünür (YouTube duraklatmasın diye) */}
       {playingUrl ? (
         <div className="fixed bottom-4 right-4 z-40 paper p-2 shadow-deep">
-          <div className="flex items-center justify-between mb-1 px-1">
+          <div className="flex items-center justify-between mb-1 px-1 gap-2">
             <button
               onClick={() => setShowGrid((v) => !v)}
-              className="font-mono text-[10px] tracking-widest uppercase text-ink-faded hover:text-oxblood truncate max-w-[160px]"
+              className="font-mono text-[10px] tracking-widest uppercase text-ink-faded hover:text-oxblood truncate max-w-[120px]"
               title="Müzik listesini aç"
             >
               ♪ {playingSong?.title || 'Çalıyor'}
             </button>
             <div className="flex gap-1">
+              <button
+                onClick={() => setMinimized((v) => !v)}
+                className="font-mono text-[10px] tracking-widest uppercase px-2 py-0.5 border border-ink hover:bg-ink hover:text-parchment"
+                title={minimized ? 'Videoyu göster' : 'Küçült (müzik çalmaya devam eder)'}
+              >
+                {minimized ? '▢ Büyüt' : '— Küçült'}
+              </button>
               <button
                 onClick={stopSong}
                 className="font-mono text-[10px] tracking-widest uppercase px-2 py-0.5 border border-ink hover:bg-ink hover:text-parchment"
@@ -162,14 +170,29 @@ export default function MediaWidget({ deadline }) {
               </button>
             </div>
           </div>
-          <iframe
-            src={getEmbedUrl(playingUrl)}
-            allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
-            allowFullScreen
-            title="player"
-            className="border border-ink"
-            style={{ width: 280, height: 158, background: '#000', display: 'block' }}
-          />
+
+          {/* iframe HER ZAMAN DOM'da kalır — küçültünce 1px'e kırpılır, ses durmaz */}
+          <div style={{
+            width: minimized ? 0 : 280,
+            height: minimized ? 0 : 158,
+            overflow: 'hidden',
+            transition: 'width 0.2s, height 0.2s',
+          }}>
+            <iframe
+              src={getEmbedUrl(playingUrl)}
+              allow="autoplay; encrypted-media; clipboard-write; picture-in-picture"
+              allowFullScreen
+              title="player"
+              className="border border-ink"
+              style={{ width: 280, height: 158, background: '#000', display: 'block' }}
+            />
+          </div>
+
+          {minimized && (
+            <div className="font-mono text-[9px] tracking-widest uppercase text-ink-faded px-1 pt-1 pb-0.5">
+              ♪ çalıyor — gizli
+            </div>
+          )}
         </div>
       ) : (
         <button
