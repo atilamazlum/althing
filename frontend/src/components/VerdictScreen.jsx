@@ -33,6 +33,25 @@ export default function VerdictScreen({ room, role, onNewCase }) {
   const severityStyle = SEVERITY_STYLES[v.severity] || SEVERITY_STYLES.ORTA;
   const today = new Date().toLocaleDateString('tr-TR');
 
+  // Karta basılacak damga — bakan kişiye göre değişir
+  let stampText = 'KARAR';
+  let stampColor = '#b8902f'; // nötr sarı/altın
+  if (winner === 'IKISI_DE_PAY_SAHIBI') {
+    stampText = 'BERABERLİK';
+    stampColor = '#b8902f';
+  } else {
+    const viewerWon =
+      (role === 'davaci' && winner === 'DAVACI_HAKLI') ||
+      (role === 'sanik' && winner === 'SANIK_HAKLI');
+    stampText = viewerWon ? 'KAZANDI' : 'KAYBETTİ';
+    stampColor = viewerWon ? '#1f5c3a' : '#7a1f1f';
+  }
+
+  // En çarpıcı söz — gerekçenin ilk cümlesi (genelde en sert), yoksa özet
+  const punchSource = v.verdict_reasoning || v.summary || '';
+  const firstSentence = (punchSource.match(/[^.!?]+[.!?]/) || [punchSource])[0].trim();
+  const punchLine = truncate(firstSentence, 160);
+
   async function snapshotCard(pixelRatio = 3) {
     if (document.fonts && document.fonts.ready) {
       try { await document.fonts.ready; } catch (_) {}
@@ -84,7 +103,7 @@ export default function VerdictScreen({ room, role, onNewCase }) {
       <div className="max-w-4xl mx-auto slide-up space-y-6">
 
         {/* === ASIL KARAR BELGESİ === */}
-        <div className="paper p-8 md:p-12">
+        <div className="paper p-5 md:p-12">
           <div className="court-header mb-6">Mahkeme Kararı</div>
 
           <div className="flex items-center justify-between mb-8">
@@ -124,7 +143,7 @@ export default function VerdictScreen({ room, role, onNewCase }) {
 
         {/* === DANIŞMAN VARGA (sert) === */}
         {c?.varga && (
-          <div className="paper p-8 md:p-12">
+          <div className="paper p-5 md:p-12">
             <div className="court-header mb-2">Danışman Varga</div>
             <p className="font-mono text-[11px] tracking-widest uppercase text-oxblood mb-6">
               Yüzleştirme
@@ -146,7 +165,7 @@ export default function VerdictScreen({ room, role, onNewCase }) {
 
         {/* === DANIŞMAN ADLER (ılımlı) === */}
         {c?.adler && (
-          <div className="paper p-8 md:p-12">
+          <div className="paper p-5 md:p-12">
             <div className="court-header mb-2">Danışman Adler</div>
             <p className="font-mono text-[11px] tracking-widest uppercase text-oxblood mb-6">
               Yol Gösterme
@@ -166,6 +185,26 @@ export default function VerdictScreen({ room, role, onNewCase }) {
           </div>
         )}
 
+        {/* === İZLEYİCİ YORUMLARI === */}
+        {room.spectatorComments && room.spectatorComments.length > 0 && (
+          <div className="paper p-5 md:p-8">
+            <div className="court-header mb-2">İzleyici Yorumları</div>
+            <p className="font-mono text-[10px] tracking-widest uppercase text-ink-faded mb-5">
+              Locadan gelen sözler · {room.spectatorComments.length} adet
+            </p>
+            <div className="space-y-3">
+              {room.spectatorComments.map((s, i) => (
+                <div key={i} className="border-l-2 border-oxblood/30 pl-4 py-1">
+                  <p className="text-ink leading-relaxed italic">“{s.text}”</p>
+                  <p className="font-mono text-[9px] tracking-widest uppercase text-ink-faded mt-1">
+                    İzleyici #{i + 1}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* === PAYLAŞILABİLİR KÜÇÜK ÖZET KARTI === */}
         <div className="paper p-6 md:p-8">
           <div className="court-header mb-2">Paylaşılabilir Özet</div>
@@ -180,11 +219,11 @@ export default function VerdictScreen({ room, role, onNewCase }) {
               style={{
                 width: 300,
                 height: 533,
-                background: 'linear-gradient(165deg, #f3eccf 0%, #e8dcb8 100%)',
-                padding: '28px 26px',
-                color: '#1a1410',
+                background: 'radial-gradient(120% 80% at 50% 0%, #2a2018 0%, #16110c 60%, #0e0a07 100%)',
+                padding: '34px 28px',
+                color: '#f3eccf',
                 fontFamily: '"Crimson Pro", Georgia, serif',
-                boxShadow: '0 20px 50px -12px rgba(0,0,0,0.35), 0 0 0 1px rgba(20,20,16,0.12)',
+                boxShadow: '0 20px 50px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(243,236,207,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
@@ -192,83 +231,124 @@ export default function VerdictScreen({ room, role, onNewCase }) {
                 flexShrink: 0,
               }}
             >
-              <span style={{ position: 'absolute', top: 9, left: 9, width: 12, height: 12, borderLeft: '1.5px solid rgba(26,20,16,0.4)', borderTop: '1.5px solid rgba(26,20,16,0.4)' }} />
-              <span style={{ position: 'absolute', top: 9, right: 9, width: 12, height: 12, borderRight: '1.5px solid rgba(26,20,16,0.4)', borderTop: '1.5px solid rgba(26,20,16,0.4)' }} />
-              <span style={{ position: 'absolute', bottom: 9, left: 9, width: 12, height: 12, borderLeft: '1.5px solid rgba(26,20,16,0.4)', borderBottom: '1.5px solid rgba(26,20,16,0.4)' }} />
-              <span style={{ position: 'absolute', bottom: 9, right: 9, width: 12, height: 12, borderRight: '1.5px solid rgba(26,20,16,0.4)', borderBottom: '1.5px solid rgba(26,20,16,0.4)' }} />
+              {/* köşe çentikleri */}
+              <span style={{ position: 'absolute', top: 11, left: 11, width: 14, height: 14, borderLeft: '1.5px solid rgba(243,236,207,0.35)', borderTop: '1.5px solid rgba(243,236,207,0.35)' }} />
+              <span style={{ position: 'absolute', top: 11, right: 11, width: 14, height: 14, borderRight: '1.5px solid rgba(243,236,207,0.35)', borderTop: '1.5px solid rgba(243,236,207,0.35)' }} />
+              <span style={{ position: 'absolute', bottom: 11, left: 11, width: 14, height: 14, borderLeft: '1.5px solid rgba(243,236,207,0.35)', borderBottom: '1.5px solid rgba(243,236,207,0.35)' }} />
+              <span style={{ position: 'absolute', bottom: 11, right: 11, width: 14, height: 14, borderRight: '1.5px solid rgba(243,236,207,0.35)', borderBottom: '1.5px solid rgba(243,236,207,0.35)' }} />
 
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 9, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#7a1f1f' }}>
+              {/* ÇAPRAZ DAMGA — boylu boyunca */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%) rotate(-32deg)',
+                width: 620,
+                textAlign: 'center',
+                pointerEvents: 'none',
+                zIndex: 5,
+              }}>
+                <div style={{
+                  fontFamily: '"DM Serif Display", Georgia, serif',
+                  fontSize: 70,
+                  letterSpacing: '0.06em',
+                  color: stampColor,
+                  opacity: 0.42,
+                  textTransform: 'uppercase',
+                  lineHeight: 1,
+                  WebkitTextStroke: `2px ${stampColor}`,
+                }}>
+                  {stampText}
+                </div>
+                <div style={{
+                  margin: '6px auto 0',
+                  width: 460,
+                  height: 5,
+                  background: stampColor,
+                  opacity: 0.42,
+                }} />
+                <div style={{
+                  margin: '5px auto 0',
+                  width: 460,
+                  height: 2,
+                  background: stampColor,
+                  opacity: 0.42,
+                }} />
+              </div>
+
+              {/* ÜST — sadece mahkeme ismi */}
+              <div style={{ textAlign: 'center', zIndex: 1 }}>
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, letterSpacing: '0.42em', textTransform: 'uppercase', color: '#c9a868' }}>
                   Althing Mahkemesi
                 </div>
+                <div style={{ margin: '12px auto 0', width: 44, height: 1, background: '#c9a868', opacity: 0.5 }} />
               </div>
 
-              <div style={{ textAlign: 'center', marginTop: 14 }}>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.45em', textTransform: 'uppercase', color: '#5a4a3a' }}>
-                  Esas No
+              {/* ORTA — kişinin sprite'ı + en çarpıcı söz */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', zIndex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                  <img
+                    src={`/sprites/${role}/normal.png`}
+                    alt=""
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    style={{
+                      height: 132,
+                      width: 'auto',
+                      objectFit: 'contain',
+                      filter: 'drop-shadow(0 8px 18px rgba(0,0,0,0.55))',
+                    }}
+                  />
                 </div>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 24, letterSpacing: '0.3em', color: '#7a1f1f', marginTop: 3 }}>
-                  {room.code}
+                <div style={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: 8,
+                  letterSpacing: '0.4em',
+                  textTransform: 'uppercase',
+                  color: '#8a7a5a',
+                  textAlign: 'center',
+                  marginBottom: 12,
+                }}>
+                  Yargıç Sigrid'in Hükmü
                 </div>
+                <p style={{
+                  fontFamily: '"DM Serif Display", Georgia, serif',
+                  fontSize: 19,
+                  lineHeight: 1.3,
+                  color: '#f3eccf',
+                  margin: 0,
+                  textAlign: 'center',
+                  fontStyle: 'italic',
+                }}>
+                  “{punchLine}”
+                </p>
               </div>
 
-              <div style={{ textAlign: 'center', margin: '18px 0 12px' }}>
+              {/* ALT — rozet + tarih */}
+              <div style={{ textAlign: 'center', zIndex: 1 }}>
                 <div style={{
                   display: 'inline-block',
-                  padding: '6px 16px',
+                  padding: '6px 18px',
                   background: severityStyle.bg,
                   color: '#f7f0dd',
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: 10,
-                  letterSpacing: '0.4em',
+                  letterSpacing: '0.38em',
                   textTransform: 'uppercase',
                   fontWeight: 600,
+                  border: '1px solid rgba(243,236,207,0.25)',
                 }}>
                   Şiddet · {severityStyle.label}
                 </div>
-              </div>
-
-              <div style={{ textAlign: 'center', marginBottom: 10 }}>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#5a4a3a' }}>
-                  Hüküm
-                </div>
-                <div style={{ fontFamily: '"DM Serif Display", Georgia, serif', fontSize: 26, lineHeight: 1.05, color: '#1a1410', marginTop: 5 }}>
-                  {stampLabel}
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0 10px' }}>
-                <span style={{ width: 50, height: 1, background: '#7a1f1f', opacity: 0.45 }} />
-              </div>
-
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#5a4a3a', marginBottom: 5 }}>
-                  Yargıçtan
-                </div>
-                <p style={{ fontSize: 12, fontStyle: 'italic', lineHeight: 1.45, color: '#1a1410', margin: 0 }}>
-                  {truncate(v.summary, 150)}
-                </p>
-              </div>
-
-              {c?.adler?.joint_advice && (
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#5a4a3a', marginBottom: 5 }}>
-                    Danışman
-                  </div>
-                  <p style={{ fontSize: 12, lineHeight: 1.45, color: '#1a1410', margin: 0 }}>
-                    {truncate(c.adler.joint_advice, 130)}
-                  </p>
-                </div>
-              )}
-
-              <div style={{ flex: 1 }} />
-
-              <div style={{ borderTop: '1px solid rgba(122, 31, 31, 0.3)', paddingTop: 8, textAlign: 'center' }}>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 8, letterSpacing: '0.4em', textTransform: 'uppercase', color: '#7a1f1f', fontWeight: 600 }}>
-                  Yargıç Ayumi
-                </div>
-                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 7, letterSpacing: '0.25em', color: '#7a6a4a', marginTop: 3 }}>
-                  {today}
+                <div style={{
+                  marginTop: 12,
+                  paddingTop: 10,
+                  borderTop: '1px solid rgba(201,168,104,0.3)',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: 8,
+                  letterSpacing: '0.3em',
+                  color: '#8a7a5a',
+                }}>
+                  Esas No {room.code} · {today}
                 </div>
               </div>
             </div>

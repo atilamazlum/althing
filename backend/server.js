@@ -85,6 +85,52 @@ function makeCode() {
   return rooms.has(c) ? makeCode() : c;
 }
 
+// İzleyici kodu — 6 karakter, oda kodundan ayrı (örn. "İZL-7K3M")
+function makeSpectatorCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c = '';
+  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)];
+  // Çakışma kontrolü
+  for (const r of rooms.values()) if (r.spectatorCode === c) return makeSpectatorCode();
+  return c;
+}
+
+const MAX_SPECTATORS = 5;
+const MAX_ROOMS_PER_IP_PER_DAY = 2;
+
+// IP başına günlük oda açma sayacı — { ip: { date: 'YYYY-MM-DD', count: 2 } }
+const ipRoomCounter = new Map();
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getClientIp(socket) {
+  const fwd = socket.handshake.headers['x-forwarded-for'];
+  if (fwd) return String(fwd).split(',')[0].trim();
+  return socket.handshake.address || 'unknown';
+}
+
+function canCreateRoom(ip) {
+  const today = todayKey();
+  const rec = ipRoomCounter.get(ip);
+  if (!rec || rec.date !== today) return { ok: true, used: 0, max: MAX_ROOMS_PER_IP_PER_DAY };
+  if (rec.count >= MAX_ROOMS_PER_IP_PER_DAY) {
+    return { ok: false, used: rec.count, max: MAX_ROOMS_PER_IP_PER_DAY };
+  }
+  return { ok: true, used: rec.count, max: MAX_ROOMS_PER_IP_PER_DAY };
+}
+
+function recordRoomCreation(ip) {
+  const today = todayKey();
+  const rec = ipRoomCounter.get(ip);
+  if (!rec || rec.date !== today) {
+    ipRoomCounter.set(ip, { date: today, count: 1 });
+  } else {
+    rec.count++;
+  }
+}
+
 function anonHandle() {
   return `Müşteki #${Math.floor(1000 + Math.random() * 9000)}`;
 }
@@ -108,7 +154,30 @@ function publicRoomState(room) {
     extensionUsed: room.extensionUsed,
     error: room.error || null,
     errorStep: room.errorStep || null,
+    isPublic: !!room.isPublic,
+    spectatorCount: (room.spectators || []).length,
+    spectatorComments: room.spectatorComments || [],
   };
+}
+
+// Ana ekranda gösterilecek aktif public oda listesi
+function listPublicRooms() {
+  const open = [];
+  for (const room of rooms.values()) {
+    if (!room.isPublic) continue;
+    // Sadece izlenebilir aşamadakiler — bekleyen, biten, hatalı olanlar görünmez
+    const watchable = ['COMPLAINT', 'GENERATING_INDICTMENT', 'COURT', 'EXTENSION_VOTE', 'GENERATING_VERDICT', 'GENERATING_COUNSEL'];
+    if (!watchable.includes(room.phase)) continue;
+    open.push({
+      code: room.code,
+      phase: room.phase,
+      topic: room.indictment?.main_topic || 'İddianame hazırlanıyor',
+      turnNumber: room.turnNumber,
+      maxTurns: room.maxTurns,
+      spectatorCount: (room.spectators || []).length,
+    });
+  }
+  return open;
 }
 
 function broadcast(room) {
@@ -263,9 +332,22 @@ function handleExtensionVote(room, role, vote) {
 // ============ SOCKET.IO HANDLERS ============
 
 io.on('connection', (socket) => {
-  socket.on('create-room', (cb) => {
+  socket.on('create-room', (opts, cb) => {
+    // opts opsiyonel — eski çağrılar (sadece cb) da çalışsın
+    if (typeof opts === 'function') { cb = opts; opts = {}; }
+    opts = opts || {};
+
+    // Günlük IP limiti kontrolü
+    const ip = getClientIp(socket);
+    const limit = canCreateRoom(ip);
+    if (!limit.ok) {
+      return cb && cb({ error: `Günlük mahkeme açma sınırına ulaştın (${limit.max}/gün). Yarın tekrar dene.` });
+    }
+    recordRoomCreation(ip);
+
     const code = makeCode();
-    const anonName = anonHandle();
+    const customName = (opts.davaciName || '').trim().slice(0, 24);
+    const anonName = customName || anonHandle();
     const room = {
       code,
       phase: PHASES.WAITING,
@@ -283,10 +365,48 @@ io.on('connection', (socket) => {
       extensionVotes: { davaci: null, sanik: null },
       extensionUsed: false,
       timerHandle: null,
+      isPublic: !!opts.isPublic,
+      spectatorCode: makeSpectatorCode(),
+      spectators: [],
+      spectatorComments: [],
     };
     rooms.set(code, room);
     socket.join(code);
-    cb({ code, role: 'davaci', anonName });
+    cb({ code, role: 'davaci', anonName, spectatorCode: room.spectatorCode, isPublic: room.isPublic });
+    broadcast(room);
+  });
+
+  // Aktif public oda listesi iste
+  socket.on('list-rooms', (cb) => {
+    if (typeof cb === 'function') cb({ rooms: listPublicRooms() });
+  });
+
+  // İzleyici olarak odaya katıl — public'te oda kodu, private'ta izleyici kodu
+  socket.on('spectate-room', ({ code }, cb) => {
+    if (!code || typeof code !== 'string') return cb && cb({ error: 'Kod gerekli.' });
+    const key = code.trim().toUpperCase();
+    // Önce oda kodu olarak dene (public), sonra izleyici kodu olarak (private)
+    let room = rooms.get(key);
+    if (!room) {
+      for (const r of rooms.values()) {
+        if (r.spectatorCode === key) { room = r; break; }
+      }
+    }
+    if (!room) return cb && cb({ error: 'İzlenecek mahkeme bulunamadı.' });
+    // Public oda kendi koduyla izlenebilir; private SADECE izleyici koduyla
+    if (room.code === key && !room.isPublic) {
+      return cb && cb({ error: 'Bu özel bir mahkeme — izleyici kodu gerekli.' });
+    }
+    const watchable = ['COMPLAINT', 'GENERATING_INDICTMENT', 'COURT', 'EXTENSION_VOTE', 'GENERATING_VERDICT', 'GENERATING_COUNSEL', 'COMPLETE'];
+    if (!watchable.includes(room.phase)) {
+      return cb && cb({ error: 'Bu mahkeme şu an izlenemiyor.' });
+    }
+    if ((room.spectators || []).length >= MAX_SPECTATORS) {
+      return cb && cb({ error: 'İzleyici kontenjanı dolu (maks. 5).' });
+    }
+    room.spectators.push({ socketId: socket.id });
+    socket.join(room.code);
+    cb && cb({ ok: true, code: room.code, role: 'spectator' });
     broadcast(room);
   });
 
@@ -391,12 +511,71 @@ io.on('connection', (socket) => {
       return cb && cb({ error: 'Geçersiz emoji.' });
     }
     if (cb) cb({ ok: true });
-    // İki tarafa da yayınla — sender da kendi tetiklediğini görsün
     io.to(room.code).emit('emoji-broadcast', { id, fromRole: role, at: Date.now() });
+  });
+
+  // İzleyici yorumu — SADECE dava bitince, 2dk cooldown (IP bazlı, çıkıp girince sıfırlanmaz)
+  socket.on('spectator-comment', ({ code, text }, cb) => {
+    const room = rooms.get(code);
+    if (!room) return cb && cb({ error: 'Oda yok.' });
+    const spec = (room.spectators || []).find((s) => s.socketId === socket.id);
+    if (!spec) return cb && cb({ error: 'İzleyici değilsin.' });
+    // Yorumlar sadece dava bittikten sonra (COMPLETE) yazılır
+    if (room.phase !== PHASES.COMPLETE) {
+      return cb && cb({ error: 'Yorum yalnızca karar açıklandıktan sonra yazılabilir.' });
+    }
+    if (typeof text !== 'string' || !text.trim()) return cb && cb({ error: 'Yorum boş.' });
+    const clean = text.trim().slice(0, 260);
+
+    // IP bazlı cooldown — çıkıp girince sıfırlanmasın
+    const ip = getClientIp(socket);
+    const key = `${room.code}:${ip}`;
+    if (!room.commentCooldowns) room.commentCooldowns = new Map();
+    const COOLDOWN_MS = 2 * 60 * 1000;
+    const now = Date.now();
+    const last = room.commentCooldowns.get(key) || 0;
+    if (now - last < COOLDOWN_MS) {
+      const wait = Math.ceil((COOLDOWN_MS - (now - last)) / 1000);
+      return cb && cb({ error: `Bekle — ${wait}sn`, cooldown: wait });
+    }
+    room.commentCooldowns.set(key, now);
+
+    if (!room.spectatorComments) room.spectatorComments = [];
+    room.spectatorComments.push({ text: clean, at: now });
+    if (cb) cb({ ok: true });
+    broadcast(room);
+  });
+
+  // İTİRAZ — Phoenix Wright tarzı. 18sn cooldown (rol başına).
+  socket.on('objection', ({ code }, cb) => {
+    const room = rooms.get(code);
+    if (!room) return cb && cb({ error: 'Oda yok.' });
+    const role =
+      room.davaci?.socketId === socket.id ? 'davaci'
+      : room.sanik?.socketId === socket.id ? 'sanik'
+      : null;
+    if (!role) return cb && cb({ error: 'Bu odada değilsin.' });
+
+    if (!room.objectionCooldown) room.objectionCooldown = {};
+    const now = Date.now();
+    const last = room.objectionCooldown[role] || 0;
+    const COOLDOWN_MS = 5 * 60 * 1000;
+    if (now - last < COOLDOWN_MS) {
+      const wait = Math.ceil((COOLDOWN_MS - (now - last)) / 1000);
+      return cb && cb({ error: `Biraz bekle — ${wait}sn`, cooldown: wait });
+    }
+    room.objectionCooldown[role] = now;
+    if (cb) cb({ ok: true });
+    io.to(room.code).emit('objection-broadcast', { fromRole: role, at: now });
   });
 
   socket.on('disconnect', () => {
     for (const [code, room] of rooms) {
+      // İzleyici ayrıldıysa listeden çıkar
+      if (room.spectators && room.spectators.some((s) => s.socketId === socket.id)) {
+        room.spectators = room.spectators.filter((s) => s.socketId !== socket.id);
+        broadcast(room);
+      }
       const isDavaci = room.davaci?.socketId === socket.id;
       const isSanik = room.sanik?.socketId === socket.id;
       if (!isDavaci && !isSanik) continue;

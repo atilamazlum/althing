@@ -41,27 +41,29 @@ export default function PhaserCourtroom({ speakerRole, speakerName, dialogText, 
     };
   }, []);
 
- useEffect(() => {
-  const scene = sceneRef.current;
-  if (!scene) return;
-
-  const apply = () => {
-    if (scene.applyState && scene.dialogBoxText && scene.load && !scene.load.isLoading()) {
-      scene.applyState({ speakerRole, speakerName, dialogText });
-    } else {
-      setTimeout(apply, 100);
-    }
-  };
-  apply();
-}, [speakerRole, speakerName, dialogText, turnNumber]);
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene || !scene.applyState) return;
+    const apply = () => scene.applyState({ speakerRole, speakerName, dialogText });
+    if (scene.dialogBoxText) apply();
+    else setTimeout(apply, 50);
+  }, [speakerRole, speakerName, dialogText, turnNumber]);
 
   return (
     <div className="paper p-2 overflow-hidden">
       <div
         ref={containerRef}
-        className="w-full mx-auto"
-        style={{ maxWidth: SCENE_WIDTH, aspectRatio: `${SCENE_WIDTH} / ${SCENE_HEIGHT}` }}
+        className="w-full mx-auto phaser-stage"
+        style={{
+          maxWidth: SCENE_WIDTH,
+          aspectRatio: `${SCENE_WIDTH} / ${SCENE_HEIGHT}`,
+        }}
       />
+      <style>{`
+        @media (max-width: 768px) {
+          .phaser-stage { max-height: 52vh; }
+        }
+      `}</style>
     </div>
   );
 }

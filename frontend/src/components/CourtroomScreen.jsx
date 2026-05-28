@@ -6,6 +6,7 @@ import SessionTransition from './SessionTransition.jsx';
 import MediaWidget from './MediaWidget.jsx';
 import EmojiPanel from './EmojiPanel.jsx';
 import EmojiOverlay from './EmojiOverlay.jsx';
+import ObjectionOverlay from './ObjectionOverlay.jsx';
 import PhaserCourtroom from '../courtroom-game/PhaserCourtroom.jsx';
 import { socket } from '../socket.js';
 
@@ -20,6 +21,8 @@ export default function CourtroomScreen({ room, role, myName, onSubmit }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [transitioningTo, setTransitioningTo] = useState(null);
   const [incomingEmoji, setIncomingEmoji] = useState(null);
+  const [objection, setObjection] = useState(null);
+  const [objCooldown, setObjCooldown] = useState(0);
 
   // Emoji broadcast dinleyicisi
   useEffect(() => {
@@ -29,6 +32,30 @@ export default function CourtroomScreen({ room, role, myName, onSubmit }) {
     socket.on('emoji-broadcast', onEmoji);
     return () => socket.off('emoji-broadcast', onEmoji);
   }, []);
+
+  // İtiraz broadcast dinleyicisi
+  useEffect(() => {
+    function onObjection({ fromRole }) {
+      setObjection({ key: Date.now(), fromSelf: fromRole === role });
+    }
+    socket.on('objection-broadcast', onObjection);
+    return () => socket.off('objection-broadcast', onObjection);
+  }, [role]);
+
+  // İtiraz cooldown sayacı
+  useEffect(() => {
+    if (objCooldown <= 0) return;
+    const t = setInterval(() => setObjCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [objCooldown]);
+
+  function handleObjection() {
+    if (objCooldown > 0) return;
+    socket.emit('objection', { code: room.code }, (res) => {
+      if (res?.error && res?.cooldown) setObjCooldown(res.cooldown);
+      else if (res?.ok) setObjCooldown(300);
+    });
+  }
 
   function handleReact(emojiId) {
     socket.emit('emoji-react', { code: room.code, id: emojiId }, () => {});
@@ -101,16 +128,21 @@ export default function CourtroomScreen({ room, role, myName, onSubmit }) {
 
   return (
     <>
-      <div className="min-h-full p-6">
+      <div className="min-h-full p-3 md:p-6">
         <div className="max-w-6xl mx-auto slide-up space-y-6">
 
           {/* === PHASER MAHKEME SAHNESİ === */}
-          <PhaserCourtroom
-            speakerRole={speakerForScene}
-            speakerName={speakerForScene ? roleLabel(speakerForScene) : null}
-            dialogText={dialogText}
-            turnNumber={room.turnNumber}
-          />
+          <div style={{ position: 'relative' }}>
+            <PhaserCourtroom
+              speakerRole={speakerForScene}
+              speakerName={speakerForScene ? roleLabel(speakerForScene) : null}
+              dialogText={dialogText}
+              turnNumber={room.turnNumber}
+            />
+            {objection && (
+              <ObjectionOverlay trigger={objection.key} fromSelf={objection.fromSelf} />
+            )}
+          </div>
 
           {/* === ANA İÇERİK === */}
           <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6">
@@ -206,7 +238,7 @@ export default function CourtroomScreen({ room, role, myName, onSubmit }) {
 
             {/* SAĞ: AKTİF TUR */}
             <div className="space-y-6">
-              <header className="paper p-5 flex items-center justify-between">
+              <header className="paper p-4 md:p-5 flex items-center justify-between flex-wrap gap-3">
                 <span className="turn-indicator">
                   {isMyTurn ? 'SIRA SENDE' : `${oppName.toUpperCase()} KONUŞUYOR`}
                 </span>
@@ -322,6 +354,49 @@ export default function CourtroomScreen({ room, role, myName, onSubmit }) {
 
       <MediaWidget deadline={room.deadline} />
       <EmojiPanel onReact={handleReact} />
+
+      {/* İTİRAZ BUTONU — sağ alt */}
+      <button
+        onClick={handleObjection}
+        disabled={objCooldown > 0}
+        className="objection-btn"
+        style={{
+          position: 'fixed',
+          zIndex: 40,
+          background: objCooldown > 0 ? '#3a2e28' : '#7a1f1f',
+          color: '#f3eccf',
+          border: '3px solid #f3eccf',
+          borderRadius: 10,
+          fontFamily: '"DM Serif Display", Georgia, serif',
+          letterSpacing: '0.04em',
+          textTransform: 'uppercase',
+          cursor: objCooldown > 0 ? 'not-allowed' : 'pointer',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+          opacity: objCooldown > 0 ? 0.55 : 1,
+          transition: 'opacity 0.2s',
+        }}
+      >
+        {objCooldown > 0
+          ? `İtiraz · ${Math.floor(objCooldown / 60)}:${String(objCooldown % 60).padStart(2, '0')}`
+          : 'İtiraz!'}
+      </button>
+      <style>{`
+        .objection-btn {
+          right: 16px;
+          top: 50%;
+          transform: translateY(-50%) rotate(-3deg);
+          padding: 14px 24px;
+          font-size: 19px;
+        }
+        @media (max-width: 640px) {
+          .objection-btn {
+            right: 10px;
+            padding: 9px 15px;
+            font-size: 13px;
+          }
+        }
+      `}</style>
+
       {incomingEmoji && (
         <EmojiOverlay
           key={incomingEmoji.key}

@@ -1,11 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import LetterModal from './LetterModal.jsx';
+import { socket } from '../socket.js';
 
-export default function HomeScreen({ onCreate, onJoin, error }) {
+export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
   const [mode, setMode] = useState(null);
   const [joinCode, setJoinCode] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [spectateCode, setSpectateCode] = useState('');
+  const [publicRooms, setPublicRooms] = useState([]);
+
+  // İzle modunda — aktif public odaları 5sn'de bir çek
+  useEffect(() => {
+    if (mode !== 'spectate') return;
+    function fetchRooms() {
+      socket.emit('list-rooms', (resp) => {
+        if (resp?.rooms) setPublicRooms(resp.rooms);
+      });
+    }
+    fetchRooms();
+    const t = setInterval(fetchRooms, 5000);
+    return () => clearInterval(t);
+  }, [mode]);
+
+  const PHASE_SHORT = {
+    COMPLAINT: 'Şikayet yazılıyor',
+    GENERATING_INDICTMENT: 'İddianame hazırlanıyor',
+    COURT: 'Duruşma sürüyor',
+    EXTENSION_VOTE: 'Uzatma oylaması',
+    GENERATING_VERDICT: 'Karar veriliyor',
+    GENERATING_COUNSEL: 'Danışman söz alıyor',
+  };
 
   return (
     <>
@@ -79,21 +105,23 @@ export default function HomeScreen({ onCreate, onJoin, error }) {
           {/* HERO */}
           <header className="text-center mb-10 relative">
             <div className="absolute top-0 left-0 hidden md:block">
-              <span className="seal-stamp">SORUNLAR</span>
+              <span className="seal-stamp">Esas No · ?</span>
             </div>
             <div className="absolute top-0 right-0 hidden md:block">
               <span className="seal-stamp" style={{ transform: 'rotate(2deg)' }}>
-                İLİŞKİLER
+                Mühürlüdür
               </span>
             </div>
 
             <div className="esas-no mb-3">A · L · T · H · I · N · G</div>
-            <h1 className="text-6xl md:text-7xl mb-3 leading-none">Mahkemesi</h1>
+            <h1 className="text-5xl md:text-7xl mb-3 leading-none">Mahkemesi</h1>
             <div className="red-rule w-24 mx-auto mb-5" />
             <p className="ribbon italic font-body text-lg md:text-xl">
               Anlatamadığın bir hesap mı kaldı
             </p>
-          
+            <p className="text-ink-soft italic font-body text-base mt-1">
+              resmen sun — yargıç bekliyor.
+            </p>
           </header>
 
           {/* MAIN — iki kart */}
@@ -126,6 +154,18 @@ export default function HomeScreen({ onCreate, onJoin, error }) {
                   </button>
                 </div>
 
+                {/* İZLE — tam genişlik üçüncü kart */}
+                <button
+                  onClick={() => setMode('spectate')}
+                  className="role-card text-left p-6 border-2 border-ink w-full mt-4"
+                >
+                  <div className="role-tag mb-2">Loca · İzleyici</div>
+                  <h3 className="text-2xl mb-2">Mahkeme izle</h3>
+                  <p className="role-desc text-sm text-ink-soft leading-snug">
+                    Açık duruşmaları izle ya da sana verilen izleyici koduyla gir.
+                  </p>
+                </button>
+
                 {error && <div className="error-box mt-6">{error}</div>}
               </div>
 
@@ -134,11 +174,11 @@ export default function HomeScreen({ onCreate, onJoin, error }) {
                 <div className="court-header mb-6">Nasıl İşler</div>
                 <ol className="space-y-3">
                   {[
-                    ['I',   'Müşteki şikayetini sunar'],
+                    ['I',   'Müşteki şikayetini sunar — istediği kadar uzun.'],
                     ['II',  'Yapay zekâ resmî bir iddianame hazırlar.'],
-                    ['III', 'Beş oturum boyunca taraflar sırayla konuşur (10dk süre sınırı içinde).'],
-                    ['IV',  'Yargıç Ayumi hakkaniyet üzerine karar verir.'],
-                    ['V',   'Danışman iki tarafa da bir yol gösterir.'],
+                    ['III', 'Beş oturum boyunca taraflar sırayla konuşur.'],
+                    ['IV',  'Yargıç Sigrid tavizsiz bir karar verir.'],
+                    ['V',   'İki danışman taraflara yüzleşme ve yol gösterir.'],
                   ].map(([num, text]) => (
                     <li key={num} className="flex gap-4 items-baseline border-b border-ink/10 pb-2 last:border-b-0">
                       <span className="step-roman text-xl w-8 flex-shrink-0 text-center">
@@ -159,17 +199,132 @@ export default function HomeScreen({ onCreate, onJoin, error }) {
             <div className="paper p-8 md:p-10">
               <div className="court-header mb-6">Davacı Onayı</div>
               <p className="mb-6 text-ink-soft font-body">
-                Kimliğin gizli kalacak — sana otomatik bir müşteki numarası atanır.
-                Sanık seni böyle görür.
+                İstersen bir isim gir — sanık ve izleyiciler seni böyle görür.
+                Boş bırakırsan sana otomatik anonim bir müşteki numarası verilir.
               </p>
+
+              {/* İsim (opsiyonel) */}
+              <label className="block mb-6">
+                <span className="text-xs font-mono tracking-[0.3em] text-ink-faded uppercase">
+                  İsmin (opsiyonel)
+                </span>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value.slice(0, 24))}
+                  placeholder="Örn. Mazlum (boş = anonim)"
+                  className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
+                />
+              </label>
+
+              {/* Public / Private seçimi */}
+              <div className="mb-6">
+                <div className="text-xs font-mono tracking-[0.3em] text-ink-faded uppercase mb-3">
+                  Görünürlük
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsPublic(false)}
+                    className={`text-left p-4 border-2 transition-colors ${
+                      !isPublic ? 'border-oxblood bg-oxblood/5' : 'border-ink-faded/40 hover:border-ink'
+                    }`}
+                  >
+                    <div className="font-display text-xl mb-1">Özel</div>
+                    <p className="text-xs text-ink-soft leading-relaxed">
+                      Sadece izleyici kodunu verdiğin kişiler izleyebilir.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPublic(true)}
+                    className={`text-left p-4 border-2 transition-colors ${
+                      isPublic ? 'border-oxblood bg-oxblood/5' : 'border-ink-faded/40 hover:border-ink'
+                    }`}
+                  >
+                    <div className="font-display text-xl mb-1">Açık</div>
+                    <p className="text-xs text-ink-soft leading-relaxed">
+                      Ana sayfada listelenir, herkes izleyebilir (maks 5 kişi).
+                    </p>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex gap-3 flex-wrap">
-                <button className="btn-brutal" onClick={onCreate}>
+                <button className="btn-brutal" onClick={() => onCreate(isPublic, displayName.trim())}>
                   Onaylıyorum, mahkemeyi aç
                 </button>
                 <button className="btn-brutal btn-brutal-secondary" onClick={() => setMode(null)}>
                   Geri
                 </button>
               </div>
+              {error && <div className="error-box mt-6">{error}</div>}
+            </div>
+          )}
+
+          {/* SPECTATE */}
+          {mode === 'spectate' && (
+            <div className="paper p-8 md:p-10">
+              <div className="court-header mb-6">İzleyici Locası</div>
+
+              {/* İzleyici koduyla gir */}
+              <label className="block mb-3">
+                <span className="text-xs font-mono tracking-[0.3em] text-ink-faded uppercase">
+                  İzleyici / Oda Kodu
+                </span>
+                <input
+                  type="text"
+                  value={spectateCode}
+                  onChange={(e) => setSpectateCode(e.target.value.toUpperCase().slice(0, 6))}
+                  placeholder="KOD"
+                  className="block w-full mt-2 bg-transparent border-b-2 border-ink font-mono text-3xl tracking-[0.3em] py-2 outline-none focus:border-oxblood"
+                />
+              </label>
+              <div className="flex gap-3 flex-wrap mb-8">
+                <button
+                  className="btn-brutal"
+                  disabled={spectateCode.length < 4}
+                  onClick={() => onSpectate(spectateCode)}
+                >
+                  İzlemeye gir
+                </button>
+                <button className="btn-brutal btn-brutal-secondary" onClick={() => setMode(null)}>
+                  Geri
+                </button>
+              </div>
+
+              {/* Açık duruşmalar listesi */}
+              <div className="court-header mb-4">Şu An Açık Duruşmalar</div>
+              {publicRooms.length === 0 ? (
+                <p className="text-sm text-ink-faded italic">
+                  Şu an izlenebilecek açık duruşma yok. Birazdan tekrar bak.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {publicRooms.map((r) => (
+                    <li key={r.code}>
+                      <button
+                        onClick={() => onSpectate(r.code)}
+                        className="w-full text-left p-4 border border-ink-faded/30 hover:border-ink hover:bg-parchment-dark/40 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-mono text-xs tracking-widest text-oxblood uppercase">
+                            Esas No {r.code}
+                          </span>
+                          <span className="font-mono text-[10px] text-ink-faded uppercase tracking-widest">
+                            {r.spectatorCount}/5 izleyici
+                          </span>
+                        </div>
+                        <p className="text-sm text-ink leading-snug">{r.topic}</p>
+                        <p className="font-mono text-[10px] text-ink-faded uppercase tracking-widest mt-1">
+                          {PHASE_SHORT[r.phase] || r.phase}
+                          {r.phase === 'COURT' && ` · Tur ${r.turnNumber}/${r.maxTurns}`}
+                        </p>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {error && <div className="error-box mt-6">{error}</div>}
             </div>
           )}
@@ -235,8 +390,7 @@ export default function HomeScreen({ onCreate, onJoin, error }) {
               </button>
               <span className="text-ink-faded/50">·</span>
               <span className="font-mono text-[11px] tracking-[0.3em] uppercase text-ink-faded">
-                © Copyright Mazlum ATİLA — Tüm Hakları Saklıdır.
-
+                Sprint 1.2 · MVP
               </span>
             </div>
           </footer>
@@ -266,7 +420,7 @@ function AboutContent() {
       </p>
 
       <p>
-        Burada yargıç bir yapay zekâdır. Tarafsız, soğukkanlı, sadece anlatılanı dinler ve
+        Burada yargıç bir yapay zekâdır — tarafsız, soğukkanlı, sadece anlatılanı dinler ve
         hakkaniyet üzerine bir görüş bildirir. Sonra bir danışman gelir; iki tarafa da yumuşak
         bir el uzatır: "Bu anlaşmazlığın altında asıl ne var?"
       </p>
@@ -279,15 +433,8 @@ function AboutContent() {
 
       <h3 className="font-display text-2xl text-ink mb-2">Geliştirici</h3>
       <p className="italic text-ink-soft">
-       Merhabalar ben Mazlum Atila. <br />
-       Projenin yegane amacı çiftler arası bitmek bilmeyen tartışmalara dış bir gözlemci tarafından bakabilmek ve hakkaniyetli bir
-       karar vermek. Umarım tartıştığınız ilişki olumlu ya da olumsuz bir şekilde son bulurki. <br />
-       Bir gün önce bırakın; ayrılığa alışsın,
-ya da bir gün önce barışın; ilişkinizi gerçekten yaşayın.
-Çünkü bazı vedalar geç kalınca ağırlaşır,
-bazı sevgiler ise erken sahip çıkılınca güzelleşir.  <br />
-<br />Projemin ismi ise İzlanda'daki Althing'den geliyor. Althing, Viking İskandinav toplumunda özgür insanların katıldığı ulusal meclisti. Yasaları yapar, dava görür ve önemli kararlar alırdı.
-<br /><br />iletişim: atilamazlumbusiness@gmail.com
+        [Burayı kendin yaz — kim olduğun, neden bu projeyi yaptığın, nasıl bir hayalin var.
+        Yargıç sabırlıdır, istediğin kadar uzun olabilir.]
       </p>
 
       <h3 className="font-display text-2xl text-ink mb-2 mt-8">Mahkemenin Vaadi</h3>
@@ -297,7 +444,9 @@ bazı sevgiler ise erken sahip çıkılınca güzelleşir.  <br />
         Adalet: yargıç delillere bakar, taraflara değil.
       </p>
 
-   
+      <p className="text-sm text-ink-faded mt-10 pt-5 border-t border-ink-faded/30 text-center">
+        Althing — yapay zekânın gözünden yargısal bir oyun. MVP, Sprint 1.2.
+      </p>
     </div>
   );
 }

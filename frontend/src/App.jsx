@@ -5,8 +5,10 @@ import ComplaintScreen from './components/ComplaintScreen.jsx';
 import CourtroomScreen from './components/CourtroomScreen.jsx';
 import VerdictScreen from './components/VerdictScreen.jsx';
 import VerdictVideoReveal from './components/VerdictVideoReveal.jsx';
+import GavelOverlay from './components/GavelOverlay.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import ExtensionVoteScreen from './components/ExtensionVoteScreen.jsx';
+import SpectatorScreen from './components/SpectatorScreen.jsx';
 
 const STORAGE_KEY = 'althing-session';
 
@@ -36,6 +38,7 @@ export default function App() {
   const [error, setError] = useState(null);
   const [retrying, setRetrying] = useState(false);
   const [videoSeen, setVideoSeen] = useState(false);
+  const [spectatorCode, setSpectatorCode] = useState(null);
 
   // Karar reveal videosunu görmüş müyüz — oda koduna göre sessionStorage
   useEffect(() => {
@@ -87,11 +90,31 @@ export default function App() {
     };
   }, []);
 
-  function handleCreateRoom() {
+  function handleCreateRoom(isPublic, davaciName) {
     setError(null);
-    socket.emit('create-room', ({ code, role: r, anonName }) => {
+
+    // Frontend tarafı ek limit — backend asıl koruma, bu sadece UX
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const raw = localStorage.getItem('roomCreationDaily');
+      let rec = raw ? JSON.parse(raw) : null;
+      if (!rec || rec.date !== today) rec = { date: today, count: 0 };
+      if (rec.count >= 2) {
+        setError('Günlük mahkeme açma sınırına ulaştın (2/gün). Yarın tekrar dene.');
+        return;
+      }
+      rec.count++;
+      localStorage.setItem('roomCreationDaily', JSON.stringify(rec));
+    } catch {}
+
+    socket.emit('create-room', { isPublic: !!isPublic, davaciName: davaciName || '' }, ({ code, role: r, anonName, spectatorCode: sc, error: err }) => {
+      if (err) {
+        setError(err);
+        return;
+      }
       setRole(r);
       setMyName(anonName);
+      setSpectatorCode(sc || null);
       saveSession({ code, role: r });
     });
   }
@@ -106,6 +129,19 @@ export default function App() {
       setRole(resp.role);
       setMyName(resp.displayName);
       saveSession({ code: resp.code, role: resp.role });
+    });
+  }
+
+  function handleSpectate(code) {
+    setError(null);
+    socket.emit('spectate-room', { code: (code || '').toUpperCase() }, (resp) => {
+      if (resp?.error) {
+        setError(resp.error);
+        return;
+      }
+      setRole('spectator');
+      setMyName('İzleyici');
+      saveSession({ code: resp.code, role: 'spectator' });
     });
   }
 
@@ -125,7 +161,12 @@ export default function App() {
 
   // Henüz odada değil → ana sayfa
   if (!room) {
-    return <HomeScreen onCreate={handleCreateRoom} onJoin={handleJoinRoom} error={error} />;
+    return <HomeScreen onCreate={handleCreateRoom} onJoin={handleJoinRoom} onSpectate={handleSpectate} error={error} />;
+  }
+
+  // İzleyici → FNAF kamera ekranı
+  if (role === 'spectator') {
+    return <SpectatorScreen room={room} />;
   }
 
   // Hata fazı: tekrar dene butonu
@@ -181,6 +222,29 @@ export default function App() {
           >
             Kodu kopyala
           </button>
+
+          {/* İzleyici kodu — özel oda */}
+          {!room.isPublic && spectatorCode && (
+            <div className="mt-8 pt-6 border-t border-ink-faded/30">
+              <p className="text-sm text-ink-faded mb-1">
+                Birinin <strong className="text-ink">izlemesini</strong> istersen bu kodu paylaş:
+              </p>
+              <div className="font-mono text-2xl tracking-[0.25em] my-2 text-ink">{spectatorCode}</div>
+              <button
+                className="btn-brutal-secondary btn-brutal text-xs"
+                onClick={() => navigator.clipboard.writeText(spectatorCode)}
+              >
+                İzleyici kodunu kopyala
+              </button>
+            </div>
+          )}
+          {room.isPublic && (
+            <div className="mt-8 pt-6 border-t border-ink-faded/30">
+              <p className="text-sm text-ink-faded italic">
+                Bu açık bir mahkeme — dava başlayınca herkes ana sayfadan izleyebilir.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -225,7 +289,7 @@ export default function App() {
   }
 
   if (room.phase === 'GENERATING_VERDICT') {
-    return <LoadingScreen title="Yargıç Ayumi kararını yazıyor" subtitle="Delil ve ifadeler tartılıyor..." />;
+    return <GavelOverlay title="Yargıç Sigrid kararını veriyor" subtitle="Delil ve ifadeler tartılıyor" />;
   }
 
   // Yargıç bitince → tam ekran reveal videosu (danışman arka planda çalışıyor)
