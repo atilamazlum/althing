@@ -206,13 +206,13 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
               {/* İsim (opsiyonel) */}
               <label className="block mb-6">
                 <span className="text-xs font-mono tracking-[0.3em] text-ink-faded uppercase">
-                  İsmin (opsiyonel)
+                  İsmininiz
                 </span>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 24))}
-                  placeholder="Örn. Mazlum (boş = anonim)"
+                  placeholder=""
                   className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
                 />
               </label>
@@ -356,7 +356,7 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 32))}
-                  placeholder="Ali"
+                  placeholder=""
                   className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
                 />
               </label>
@@ -433,8 +433,8 @@ function AboutContent() {
 
       <h3 className="font-display text-2xl text-ink mb-2">Geliştirici</h3>
       <p className="italic text-ink-soft">
-        [Burayı kendin yaz — kim olduğun, neden bu projeyi yaptığın, nasıl bir hayalin var.
-        Yargıç sabırlıdır, istediğin kadar uzun olabilir.]
+       Saatim yok tam olarak bilemem biraz biraz şarap önceydi!
+       umarım sorunlarınız çözülmez ve daha fazla uygulamaya girersiniz sevgisizliklerimle...
       </p>
 
       <h3 className="font-display text-2xl text-ink mb-2 mt-8">Mahkemenin Vaadi</h3>

@@ -13,29 +13,36 @@
 
 
 export const JUSTICE_QUOTES = [
-  {
-    text: 'Bir tek kişiye yapılan haksızlık, bütün topluluğa yönelmiş bir tehdittir.',
-    author: 'Montesquieu',
+  { 
+    text: 'Bir tek kişiye yapılan haksızlık, bütün bir topluma yönelmiş açık bir tehdittir.', 
+    author: 'Montesquieu' 
   },
-  {
-    text: 'İnsanlar özgür olmadığını düşünür, ancak kısıtlamaların çoğu kendi zihinlerindedir. Hakiki adalet, bu yanılgıyı kırmaktır.',
-    author: ' Ezio Auditore da Firenze',
+  { 
+    text: 'İnsanlar özgür olmadıklarını sanır. Oysa asıl zincirleri kendi zihinlerindedir. Gerçek adalet, bu zincirleri kırmaktır.', 
+    author: 'Ezio Auditore da Firenze' 
   },
-  {
-    text: 'Kötülük kötülüktür. Daha az, daha fazla ya da tam ortası bir farklılık yaratmaz. Seviyesi keyfi, açıklaması bulanıktır. Eğer ben bir kötülüğü ya da diğerini seçeceksem, hiçbirini seçmemeyi tercih ederim',
-    author: 'Geralt of Rivia',
+  { 
+    text: 'Kötülük, kötülüktür. Azı da çoğu da birdir. Seviyesi yoktur. Eğer iki kötülük arasında seçim yapmak zorunda kalırsam, ikisini de reddederim.', 
+    author: 'Geralt of Rivia' 
   },
-  {
-    text: 'Adaletsizliğin en büyüğü, adaletsiz olunduğu halde adil görünmektir.',
-    author: 'Platon',
+  { 
+    text: 'Adaletsizliğin en kötüsü, adaletsiz olduğun hâlde adil görünmektir.', 
+    author: 'Platon' 
   },
-  {
-    text: 'Bizler sadece adalet adına intikam peşinde koşan sıradan insanlarız. Ancak intikamın adı adalet olursa, bu adalet sadece daha fazla intikam doğurur ve bir nefret zincirine dönüşür.',
-    author: 'Nagato',
+  { 
+    text: 'Biz adalet adına intikam peşinde koşan yalnızca insanız. Ama intikam adalet diye sunulduğunda, o adalet yeni intikamlar doğurur ve sonsuz bir nefret çemberine dönüşür.', 
+    author: 'Nagato' 
   },
-
-  
+  { 
+    text: 'Adalet, güçlü olanın değil, doğru olanın yanında durmaktır.', 
+    author: 'Sokrates' 
+  },
+  { 
+    text: 'Gerçek adalet, intikam duygusunu değil, vicdanın sesini dinlediğinde ortaya çıkar.', 
+    author: 'Victor Hugo' 
+  }
 ];
+
 
 export function pickRandomQuote() {
   return JUSTICE_QUOTES[Math.floor(Math.random() * JUSTICE_QUOTES.length)];
