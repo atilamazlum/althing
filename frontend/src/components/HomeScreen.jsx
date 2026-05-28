@@ -118,7 +118,7 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
           {/* HERO */}
           <header className="text-center mb-10 relative">
             <div className="absolute top-0 left-0 hidden md:block">
-              <span className="seal-stamp">Esas No · ?</span>
+              <span className="seal-stamp">EN GÜVENLİ MAHKEME</span>
             </div>
             <div className="absolute top-0 right-0 hidden md:block">
               <span className="seal-stamp" style={{ transform: 'rotate(2deg)' }}>
@@ -225,7 +225,7 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 24))}
-                  placeholder="Örn. Mazlum (boş = anonim)"
+                  placeholder="İSİM"
                   className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
                 />
               </label>
@@ -369,7 +369,7 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 32))}
-                  placeholder="Ali"
+                  placeholder="isim"
                   className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
                 />
               </label>
@@ -455,8 +455,7 @@ function AboutContent() {
 
       <h3 className="font-display text-2xl text-ink mb-2">Geliştirici</h3>
       <p className="italic text-ink-soft">
-        [Burayı kendin yaz — kim olduğun, neden bu projeyi yaptığın, nasıl bir hayalin var.
-        Yargıç sabırlıdır, istediğin kadar uzun olabilir.]
+        Merhabalar umarım sorunlarınız çözülmez ve uygulamayı daha fazla kullanırsınız. sevgisizliklerimle...
       </p>
 
       <h3 className="font-display text-2xl text-ink mb-2 mt-8">Mahkemenin Vaadi</h3>
