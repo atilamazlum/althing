@@ -10,6 +10,19 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
   const [isPublic, setIsPublic] = useState(false);
   const [spectateCode, setSpectateCode] = useState('');
   const [publicRooms, setPublicRooms] = useState([]);
+  const [stats, setStats] = useState(null);
+
+  // İstatistikleri çek (mount + her 30sn)
+  useEffect(() => {
+    function fetchStats() {
+      socket.emit('get-stats', (resp) => {
+        if (resp) setStats(resp);
+      });
+    }
+    fetchStats();
+    const t = setInterval(fetchStats, 30000);
+    return () => clearInterval(t);
+  }, []);
 
   // İzle modunda — aktif public odaları 5sn'de bir çek
   useEffect(() => {
@@ -206,13 +219,13 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
               {/* İsim (opsiyonel) */}
               <label className="block mb-6">
                 <span className="text-xs font-mono tracking-[0.3em] text-ink-faded uppercase">
-                  İsmininiz
+                  İsmin (opsiyonel)
                 </span>
                 <input
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 24))}
-                  placeholder=""
+                  placeholder="Örn. Mazlum (boş = anonim)"
                   className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
                 />
               </label>
@@ -356,7 +369,7 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value.slice(0, 32))}
-                  placeholder=""
+                  placeholder="Ali"
                   className="block w-full mt-2 bg-transparent border-b-2 border-ink font-body text-xl py-2 outline-none focus:border-oxblood"
                 />
               </label>
@@ -393,6 +406,15 @@ export default function HomeScreen({ onCreate, onJoin, onSpectate, error }) {
                 Sprint 1.2 · MVP
               </span>
             </div>
+
+            {/* SAYAÇ — herkese görünür */}
+            {stats && (
+              <div className="text-center mt-4 font-mono text-[10px] tracking-[0.25em] uppercase text-ink-faded">
+                <span className="text-oxblood">{stats.totalCases.toLocaleString('tr-TR')}</span> dava görüldü
+                <span className="mx-2 opacity-50">·</span>
+                <span className="text-oxblood">{stats.totalVisits.toLocaleString('tr-TR')}</span> kişi ziyaret etti
+              </div>
+            )}
           </footer>
 
         </div>
@@ -433,8 +455,8 @@ function AboutContent() {
 
       <h3 className="font-display text-2xl text-ink mb-2">Geliştirici</h3>
       <p className="italic text-ink-soft">
-       Saatim yok tam olarak bilemem biraz biraz şarap önceydi!
-       umarım sorunlarınız çözülmez ve daha fazla uygulamaya girersiniz sevgisizliklerimle...
+        [Burayı kendin yaz — kim olduğun, neden bu projeyi yaptığın, nasıl bir hayalin var.
+        Yargıç sabırlıdır, istediğin kadar uzun olabilir.]
       </p>
 
       <h3 className="font-display text-2xl text-ink mb-2 mt-8">Mahkemenin Vaadi</h3>

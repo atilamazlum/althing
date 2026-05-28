@@ -101,6 +101,12 @@ const MAX_ROOMS_PER_IP_PER_DAY = 2;
 // IP başına günlük oda açma sayacı — { ip: { date: 'YYYY-MM-DD', count: 2 } }
 const ipRoomCounter = new Map();
 
+// Site geneli sayaçlar
+const stats = {
+  totalCases: 0,        // toplam açılan dava
+  totalVisits: 0,       // toplam tekil ziyaret (yaklaşık — yeni socket bağlantısı)
+};
+
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -332,6 +338,15 @@ function handleExtensionVote(room, role, vote) {
 // ============ SOCKET.IO HANDLERS ============
 
 io.on('connection', (socket) => {
+  stats.totalVisits++;
+
+  // İstatistik isteği
+  socket.on('get-stats', (cb) => {
+    if (typeof cb === 'function') {
+      cb({ totalCases: stats.totalCases, totalVisits: stats.totalVisits });
+    }
+  });
+
   socket.on('create-room', (opts, cb) => {
     // opts opsiyonel — eski çağrılar (sadece cb) da çalışsın
     if (typeof opts === 'function') { cb = opts; opts = {}; }
@@ -344,6 +359,7 @@ io.on('connection', (socket) => {
       return cb && cb({ error: `Günlük mahkeme açma sınırına ulaştın (${limit.max}/gün). Yarın tekrar dene.` });
     }
     recordRoomCreation(ip);
+    stats.totalCases++;
 
     const code = makeCode();
     const customName = (opts.davaciName || '').trim().slice(0, 24);

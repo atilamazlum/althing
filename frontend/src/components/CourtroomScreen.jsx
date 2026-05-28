@@ -72,8 +72,8 @@ export default function CourtroomScreen({ room, role, myName, onSubmit }) {
       if (room.turnNumber > prevTurnNum.current && room.turnNumber > 1) {
         const lastTurn = room.turns[room.turns.length - 1];
         const textLen = lastTurn?.text?.length || 0;
-        // Typewriter ~18ms/char + 1.8sn ek bekleme, min 3sn, maks 9sn
-        const delayMs = Math.min(9000, Math.max(3000, textLen * 18 + 1800));
+        // Typewriter ~18ms/char + 1.8sn ek bekleme, min 3sn, maks 9sn — sonra +5sn okuma süresi
+        const delayMs = Math.min(9000, Math.max(3000, textLen * 18 + 1800)) + 5000;
         if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
         transitionTimerRef.current = setTimeout(() => {
           setTransitioningTo(room.turnNumber);

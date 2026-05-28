@@ -23,6 +23,22 @@ export default function ExtensionVoteScreen({ room, role, myName }) {
       <div className="paper p-10 max-w-2xl mx-auto slide-up">
         <div className="court-header mb-6">5 Tur Tamamlandı</div>
 
+        {/* KARŞI TARAFIN OY DURUMU — her zaman üstte */}
+        <div className={`mb-6 p-4 border-2 ${oppVote !== null ? 'border-oxblood bg-oxblood/5' : 'border-ink-faded/30'}`}>
+          <div className="font-mono text-[10px] tracking-[0.3em] text-ink-faded uppercase mb-1">
+            Karşı Taraf · {oppName}
+          </div>
+          {oppVote === null ? (
+            <div className="italic text-ink-soft">
+              Henüz oy vermedi <span className="ink-pulse">· · ·</span>
+            </div>
+          ) : (
+            <div className="text-lg font-display text-oxblood">
+              {oppVote ? '✓ +2 tur daha istiyor' : '✗ Karar verilsin diyor'}
+            </div>
+          )}
+        </div>
+
         <h1 className="text-3xl md:text-4xl mb-4 text-center">
           Karar zamanı mı, +2 tur daha mı?
         </h1>
