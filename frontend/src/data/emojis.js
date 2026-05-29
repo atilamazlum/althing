@@ -30,8 +30,8 @@ export const EMOJIS = [
    { id: 'sigma',       file: 'sigma.gif',       label: 'Sigma',        sound: 'boing.mp3' },
    { id: 'stfu',        file: 'stfu.gif',        label: 'STFU',         sound: 'boing.mp3' },
    { id: 'yap',         file: 'yap.gif',         label: 'Yap',          sound: 'boing.mp3' },
-    { id: 'yap',         file: 'doukes.gif',         label: 'Yap',          sound: 'boing.mp3' },
-     { id: 'yap',         file: 'gif.gif',         label: 'Yap',          sound: 'boing.mp3' },
+    { id: 'doukes',         file: 'doukes.gif',         label: 'doukes',          sound: 'boing.mp3' },
+     { id: 'gif',         file: 'gif.gif',         label: 'gif',          sound: 'boing.mp3' },
 ];
 
 // Her emojinin tek başına 3dk cooldown'u var
