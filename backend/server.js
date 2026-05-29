@@ -4,6 +4,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { IDDIANAME_YAZICI, YARGIC, DANISMAN_VARGA, DANISMAN_ADLER } from './prompts.js';
@@ -101,11 +102,41 @@ const MAX_ROOMS_PER_IP_PER_DAY = 2;
 // IP başına günlük oda açma sayacı — { ip: { date: 'YYYY-MM-DD', count: 2 } }
 const ipRoomCounter = new Map();
 
-// Site geneli sayaçlar
-const stats = {
-  totalCases: 0,        // toplam açılan dava
-  totalVisits: 0,       // toplam tekil ziyaret (yaklaşık — yeni socket bağlantısı)
-};
+// Site geneli sayaçlar — kalıcı (dosyaya yazılır, açılışta yüklenir)
+const STATS_FILE = './stats.json';
+
+function loadStats() {
+  try {
+    const raw = fs.readFileSync(STATS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    return {
+      totalCases: parseInt(parsed.totalCases, 10) || 0,
+      totalVisits: parseInt(parsed.totalVisits, 10) || 0,
+    };
+  } catch {
+    return { totalCases: 0, totalVisits: 0 };
+  }
+}
+
+const stats = loadStats();
+
+let saveTimer = null;
+function saveStats() {
+  // 5 saniyede bir yaz — sürekli I/O olmasın
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    try {
+      fs.writeFileSync(STATS_FILE, JSON.stringify(stats));
+    } catch (e) {
+      console.error('Sayaç kaydedilemedi:', e.message);
+    }
+    saveTimer = null;
+  }, 5000);
+}
+
+// Process kapanırken son durumu yaz
+process.on('SIGTERM', () => { try { fs.writeFileSync(STATS_FILE, JSON.stringify(stats)); } catch {} });
+process.on('SIGINT', () => { try { fs.writeFileSync(STATS_FILE, JSON.stringify(stats)); } catch {} process.exit(0); });
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -339,6 +370,7 @@ function handleExtensionVote(room, role, vote) {
 
 io.on('connection', (socket) => {
   stats.totalVisits++;
+  saveStats();
 
   // İstatistik isteği
   socket.on('get-stats', (cb) => {
@@ -360,6 +392,7 @@ io.on('connection', (socket) => {
     }
     recordRoomCreation(ip);
     stats.totalCases++;
+    saveStats();
 
     const code = makeCode();
     const customName = (opts.davaciName || '').trim().slice(0, 24);
